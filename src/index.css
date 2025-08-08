@@ -39,20 +39,24 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Brand & motion tokens */
+    --brand: 258 90% 60%; /* violet */
+    --brand-2: 192 89% 56%; /* cyan */
+    --brand-3: 43 96% 56%;  /* amber accent */
+
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--brand) / 0.30);
+    --shadow-glow: 0 0 40px hsl(var(--brand-2) / 0.35);
+
+    --pointer-x: 50%;
+    --pointer-y: 30%;
   }
 
   .dark {
@@ -101,5 +105,23 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-radar-hero {
+    background:
+      radial-gradient(900px 600px at var(--pointer-x, 50%) var(--pointer-y, 30%), hsl(var(--brand) / 0.25), transparent 60%),
+      linear-gradient(135deg, hsl(var(--brand-2) / 0.10), hsl(var(--brand) / 0.10));
+  }
+  .glass {
+    @apply bg-background/60 backdrop-blur-md border border-border;
+    box-shadow: var(--shadow-elegant);
+  }
+  .gradient-text {
+    background-image: linear-gradient(90deg, hsl(var(--brand)), hsl(var(--brand-2)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
