@@ -1,1 +1,4 @@
 project_id = "jtyjewzulygflrrfszre"
+
+[functions.xi-signed-url]
+verify_jwt = false

@@ -1,12 +1,32 @@
 import { Helmet } from "react-helmet-async";
 import { useParams, Link } from "react-router-dom";
-import { getTool, categories, scoreFor } from "@/data/mock";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Tool() {
   const { id } = useParams<{ id: string }>();
-  const tool = id ? getTool(id) : undefined;
+  const [tool, setTool] = useState<any | null>(null);
+  const [scores, setScores] = useState<Array<{ category: string; score_float: number }>>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      const [{ data: t }, { data: s }] = await Promise.all([
+        supabase.from("tools").select("id,name,vendor,homepage_url,description,is_oss").eq("id", id).maybeSingle(),
+        supabase
+          .from("ranking_daily")
+          .select("category, score_float")
+          .eq("tool_id", id)
+          .eq("as_of_date", new Date().toISOString().slice(0, 10))
+          .order("category", { ascending: true }),
+      ]);
+      setTool(t ?? null);
+      setScores((s as any) ?? []);
+    };
+    load();
+  }, [id]);
 
   if (!tool) {
     return (
@@ -24,7 +44,7 @@ export default function Tool() {
     <div className="container mx-auto py-8">
       <Helmet>
         <title>{tool.name} — Overview | AI Market Radar</title>
-        <meta name="description" content={`Overview, pricing, and category scores for ${tool.name}.`} />
+        <meta name="description" content={`Overview and category scores for ${tool.name}.`} />
         <link rel="canonical" href={window.location.origin + "/tools/" + tool.id} />
       </Helmet>
       <header className="mb-6">
@@ -36,22 +56,31 @@ export default function Tool() {
         <Card className="p-4">
           <h2 className="font-semibold mb-2">Details</h2>
           <ul className="text-sm space-y-1">
-            <li>Vendor: {tool.vendor}</li>
-            <li>Open source: {tool.oss ? "Yes" : "No"}</li>
-            <li>Price from: ${tool.priceFromUsd}/mo</li>
-            <li><a className="underline" href={tool.homepageUrl} target="_blank" rel="noreferrer">Website</a></li>
+            <li>Vendor: {tool.vendor ?? "—"}</li>
+            <li>Open source: {tool.is_oss ? "Yes" : "No"}</li>
+            <li>
+              {tool.homepage_url ? (
+                <a className="underline" href={tool.homepage_url} target="_blank" rel="noreferrer">Website</a>
+              ) : (
+                "Website: —"
+              )}
+            </li>
           </ul>
         </Card>
         <Card className="p-4 md:col-span-2">
-          <h2 className="font-semibold mb-2">Category Scores</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {categories.slice(0, 9).map((c) => (
-              <div key={c.key} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                <span>{c.label}</span>
-                <Badge variant="secondary">{scoreFor(tool.id, c.key)}</Badge>
-              </div>
-            ))}
-          </div>
+          <h2 className="font-semibold mb-2">Today’s Category Scores</h2>
+          {scores.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No scores yet for today.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {scores.map((c) => (
+                <div key={c.category} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                  <span>{c.category}</span>
+                  <Badge variant="secondary">{Math.round(c.score_float)}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
     </div>

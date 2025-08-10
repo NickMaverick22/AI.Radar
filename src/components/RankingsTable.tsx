@@ -1,14 +1,44 @@
+import { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCategoryRanking, tools } from "@/data/mock";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+interface RankRow {
+  tool_id: string;
+  score_float: number;
+  rank_int: number;
+  delta_vs_yesterday_int: number;
+  tools?: { name: string; homepage_url: string | null };
+}
 
 export function RankingsTable({ categoryKey }: { categoryKey: string }) {
-  const ranking = getCategoryRanking(categoryKey, 15);
+  const [rows, setRows] = useState<RankRow[]>([]);
 
-  const price = (toolId: string) => tools.find((t) => t.id === toolId)?.priceFromUsd ?? 0;
-  const name = (toolId: string) => tools.find((t) => t.id === toolId)?.name ?? toolId;
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const asOf = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("ranking_daily")
+        .select("tool_id, score_float, rank_int, delta_vs_yesterday_int, tools(name, homepage_url)")
+        .eq("category", categoryKey)
+        .eq("as_of_date", asOf)
+        .order("rank_int", { ascending: true });
+      if (!active) return;
+      if (error) {
+        console.error("Failed to load rankings", error);
+        setRows([]);
+        return;
+      }
+      setRows(data as any);
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [categoryKey]);
 
   return (
     <div className="w-full overflow-x-auto">
@@ -19,35 +49,35 @@ export function RankingsTable({ categoryKey }: { categoryKey: string }) {
             <TableHead>Tool</TableHead>
             <TableHead>Score</TableHead>
             <TableHead>Δ</TableHead>
-            <TableHead>Price from</TableHead>
             <TableHead className="text-right">Links</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {ranking.map((r) => (
-            <TableRow key={r.toolId}>
-              <TableCell>{r.rank}</TableCell>
+          {rows.map((r) => (
+            <TableRow key={r.tool_id}>
+              <TableCell>{r.rank_int}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Link to={`/tools/${r.toolId}`} className="font-medium hover:underline">
-                    {name(r.toolId)}
+                  <Link to={`/tools/${r.tool_id}`} className="font-medium hover:underline">
+                    {r.tools?.name ?? r.tool_id}
                   </Link>
-                  {r.rank <= 3 && <Badge variant="secondary">Top {r.rank}</Badge>}
+                  {r.rank_int <= 3 && <Badge variant="secondary">Top {r.rank_int}</Badge>}
                 </div>
               </TableCell>
-              <TableCell>{r.score}</TableCell>
+              <TableCell>{Math.round(r.score_float)}</TableCell>
               <TableCell>
-                <Badge variant={r.delta >= 0 ? "secondary" : "destructive"}>
-                  {r.delta >= 0 ? `+${r.delta}` : r.delta}
+                <Badge variant={r.delta_vs_yesterday_int >= 0 ? "secondary" : "destructive"}>
+                  {r.delta_vs_yesterday_int >= 0 ? `+${r.delta_vs_yesterday_int}` : r.delta_vs_yesterday_int}
                 </Badge>
               </TableCell>
-              <TableCell>${price(r.toolId)}</TableCell>
               <TableCell className="text-right">
-                <Button asChild variant="outline" size="sm">
-                  <a href={tools.find((t) => t.id === r.toolId)?.homepageUrl} target="_blank" rel="noreferrer">
-                    Visit
-                  </a>
-                </Button>
+                {r.tools?.homepage_url && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={r.tools.homepage_url} target="_blank" rel="noreferrer">
+                      Visit
+                    </a>
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
@@ -56,3 +86,4 @@ export function RankingsTable({ categoryKey }: { categoryKey: string }) {
     </div>
   );
 }
+

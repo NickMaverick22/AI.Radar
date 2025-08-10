@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { categories, getCategoryRanking, getTopMovers, updateLog } from "@/data/mock";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const heroPointer = () => {
   const onMove = (e: MouseEvent) => {
@@ -19,12 +19,28 @@ const heroPointer = () => {
 };
 
 const Index = () => {
+  const [logs, setLogs] = useState<Array<{ finished_at: string; job: string; status: string; info: any }>>([]);
+  const [movers, setMovers] = useState<Array<{ tool_id: string; delta: number }>>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+
   useEffect(() => {
     const cleanup = heroPointer();
     return cleanup;
   }, []);
 
-  const movers = getTopMovers("coding-devtools", 8);
+  useEffect(() => {
+    const load = async () => {
+      const [{ data: logData }, { data: cats } , { data: today }] = await Promise.all([
+        supabase.from("update_log").select("finished_at, job, status, info").order("finished_at", { ascending: false }).limit(20),
+        supabase.from("admin_weights").select("category").order("category", { ascending: true }),
+        supabase.from("ranking_daily").select("tool_id, delta_vs_yesterday_int").eq("as_of_date", new Date().toISOString().slice(0,10)).order("delta_vs_yesterday_int", { ascending: false }).limit(8),
+      ]);
+      setLogs((logData as any) ?? []);
+      setCategories(((cats as any) ?? []).map((c: any) => c.category as string));
+      setMovers(((today as any) ?? []).map((r: any) => ({ tool_id: r.tool_id as string, delta: r.delta_vs_yesterday_int as number })));
+    };
+    load();
+  }, []);
 
   return (
     <div>
@@ -41,7 +57,7 @@ const Index = () => {
               Daily AI Tool Rankings, Signals & Voice Recommendations
             </h1>
             <p className="mt-4 text-muted-foreground text-lg">
-              Monitor 24 categories, see movers, compare options, and get best practices—grounded with sources.
+              Monitor categories, see movers, compare options, and get best practices—grounded with sources.
             </p>
             <div className="mt-6 flex gap-3">
               <Link to="/rankings"><Button>Browse Rankings</Button></Link>
@@ -54,8 +70,8 @@ const Index = () => {
       <section className="border-y">
         <div className="container mx-auto overflow-hidden py-2">
           <div className="whitespace-nowrap animate-marquee flex gap-12 text-sm">
-            {updateLog.map((u, i) => (
-              <span key={i} className="text-muted-foreground">{new Date(u.ts).toLocaleTimeString()} — {u.text}</span>
+            {logs.map((u, i) => (
+              <span key={i} className="text-muted-foreground">{new Date(u.finished_at).toLocaleTimeString()} — {u.job} {u.status}</span>
             ))}
           </div>
         </div>
@@ -64,11 +80,11 @@ const Index = () => {
       <section className="container mx-auto py-10">
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-4">
-            <h2 className="text-xl font-semibold">Top Movers</h2>
+            <h2 className="text-xl font-semibold">Top Movers (Today)</h2>
             <div className="mt-4 space-y-3">
               {movers.map((m) => (
-                <div key={m.toolId} className="flex items-center justify-between text-sm">
-                  <Link to={`/tools/${m.toolId}`} className="hover:underline">{m.toolId}</Link>
+                <div key={m.tool_id} className="flex items-center justify-between text-sm">
+                  <Link to={`/tools/${m.tool_id}`} className="hover:underline">{m.tool_id}</Link>
                   <Badge variant={m.delta >= 0 ? "secondary" : "destructive"}>
                     {m.delta >= 0 ? `+${m.delta}` : m.delta}
                   </Badge>
@@ -79,7 +95,7 @@ const Index = () => {
 
           <Card className="p-4 md:col-span-2">
             <h2 className="text-xl font-semibold">Ask the Voice Advisor</h2>
-            <p className="text-sm text-muted-foreground mt-1">Provide your ElevenLabs API key and an Agent ID to try live voice recommendations.</p>
+            <p className="text-sm text-muted-foreground mt-1">Works with public or private ElevenLabs Agents using a secure signed URL.</p>
             <div className="mt-4"><VoiceAdvisor /></div>
           </Card>
         </div>
@@ -88,31 +104,19 @@ const Index = () => {
       <section className="container mx-auto py-6">
         <h2 className="text-2xl font-semibold mb-4">Categories</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.slice(0, 8).map((c) => {
-            const top3 = getCategoryRanking(c.key, 3);
-            return (
-              <Card key={c.key} className="p-4 transition-transform hover:translate-y-[-2px]">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{c.label}</h3>
-                  <Badge variant="secondary">Top 3</Badge>
-                </div>
-                <div className="mt-3 space-y-2 text-sm">
-                  {top3.map((t) => (
-                    <div key={t.toolId} className="flex items-center justify-between">
-                      <span className="text-muted-foreground">#{t.rank}</span>
-                      <Link to={`/tools/${t.toolId}`} className="font-medium hover:underline">{t.toolId}</Link>
-                      <span className="text-muted-foreground">{t.score}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4">
-                  <Link to={`/rankings`}>
-                    <Button size="sm" variant="outline">View full table</Button>
-                  </Link>
-                </div>
-              </Card>
-            );
-          })}
+          {categories.slice(0, 8).map((c) => (
+            <Card key={c} className="p-4 transition-transform hover:translate-y-[-2px]">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">{c}</h3>
+                <Badge variant="secondary">Today</Badge>
+              </div>
+              <div className="mt-4">
+                <Link to={`/rankings`}>
+                  <Button size="sm" variant="outline">View full table</Button>
+                </Link>
+              </div>
+            </Card>
+          ))}
         </div>
       </section>
     </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function VoiceAdvisor() {
   const { toast } = useToast();
@@ -25,21 +26,34 @@ export default function VoiceAdvisor() {
 
   const connect = async () => {
     try {
-      if (!apiKey || !agentId) {
-        toast({ title: "Missing configuration", description: "Enter API key and Agent ID" });
+      if (!agentId) {
+        toast({ title: "Missing configuration", description: "Enter Agent ID" });
         return;
       }
-      // Explain microphone usage and ask permission early
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      // @11labs/react uses api key via window env header injection; set header
-      // Note: The package reads from 'XI_API_KEY' header when starting session via signed URL.
-      // For public agents, we can start with agentId directly.
-      await conversation.startSession({ agentId });
+
+      // Try private agent via signed URL
+      let signedUrl: string | undefined;
+      try {
+        const { data, error } = await supabase.functions.invoke("xi-signed-url", {
+          body: { agent_id: agentId },
+        });
+        if (error) throw error;
+        signedUrl = (data as any)?.websocket_url || (data as any)?.ws_url || (data as any)?.signed_url || (data as any)?.url;
+      } catch {
+        signedUrl = undefined; // fall back to public agent
+      }
+
+      if (signedUrl) {
+        await conversation.startSession({ signedUrl });
+      } else {
+        await conversation.startSession({ agentId });
+      }
       connectedRef.current = true;
       toast({ title: "Voice connected", description: "Speak to the market analyst." });
     } catch (e) {
       console.error(e);
-      toast({ title: "Failed to connect", description: "Check API key/Agent ID and mic permissions", variant: "destructive" });
+      toast({ title: "Failed to connect", description: "Check Agent ID and mic permissions", variant: "destructive" });
     }
   };
 
