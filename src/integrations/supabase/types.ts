@@ -14,13 +14,350 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_weights: {
+        Row: {
+          category: string
+          updated_at: string | null
+          updated_by: string | null
+          weight_json: Json
+        }
+        Insert: {
+          category: string
+          updated_at?: string | null
+          updated_by?: string | null
+          weight_json: Json
+        }
+        Update: {
+          category?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          weight_json?: Json
+        }
+        Relationships: []
+      }
+      ranking_daily: {
+        Row: {
+          as_of_date: string
+          category: string
+          delta_vs_yesterday_int: number | null
+          rank_int: number
+          score_float: number
+          tool_id: string
+        }
+        Insert: {
+          as_of_date: string
+          category: string
+          delta_vs_yesterday_int?: number | null
+          rank_int: number
+          score_float: number
+          tool_id: string
+        }
+        Update: {
+          as_of_date?: string
+          category?: string
+          delta_vs_yesterday_int?: number | null
+          rank_int?: number
+          score_float?: number
+          tool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_daily_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ranking_signals_raw: {
+        Row: {
+          as_of_date: string
+          category: string
+          signal_key: string
+          signal_value_float: number
+          tool_id: string
+        }
+        Insert: {
+          as_of_date: string
+          category: string
+          signal_key: string
+          signal_value_float: number
+          tool_id: string
+        }
+        Update: {
+          as_of_date?: string
+          category?: string
+          signal_key?: string
+          signal_value_float?: number
+          tool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_signals_raw_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      releases: {
+        Row: {
+          changelog_hash: string | null
+          id: string
+          notes_md: string | null
+          release_date: string | null
+          source_url: string | null
+          tool_id: string | null
+          version: string | null
+        }
+        Insert: {
+          changelog_hash?: string | null
+          id?: string
+          notes_md?: string | null
+          release_date?: string | null
+          source_url?: string | null
+          tool_id?: string | null
+          version?: string | null
+        }
+        Update: {
+          changelog_hash?: string | null
+          id?: string
+          notes_md?: string | null
+          release_date?: string | null
+          source_url?: string | null
+          tool_id?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releases_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sources: {
+        Row: {
+          credibility_score: number | null
+          domain: string | null
+          id: string
+          last_crawled_at: string | null
+          source_type: string | null
+          tool_id: string | null
+          url: string | null
+        }
+        Insert: {
+          credibility_score?: number | null
+          domain?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          source_type?: string | null
+          tool_id?: string | null
+          url?: string | null
+        }
+        Update: {
+          credibility_score?: number | null
+          domain?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          source_type?: string | null
+          tool_id?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sources_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_categories: {
+        Row: {
+          category: string
+          confidence: number | null
+          tool_id: string
+        }
+        Insert: {
+          category: string
+          confidence?: number | null
+          tool_id: string
+        }
+        Update: {
+          category?: string
+          confidence?: number | null
+          tool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_categories_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tools: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          homepage_url: string | null
+          id: string
+          is_oss: boolean | null
+          name: string
+          updated_at: string | null
+          vendor: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          homepage_url?: string | null
+          id?: string
+          is_oss?: boolean | null
+          name: string
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          homepage_url?: string | null
+          id?: string
+          is_oss?: boolean | null
+          name?: string
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      update_log: {
+        Row: {
+          finished_at: string | null
+          id: number
+          info: Json | null
+          job: string
+          status: string
+        }
+        Insert: {
+          finished_at?: string | null
+          id?: number
+          info?: Json | null
+          job: string
+          status: string
+        }
+        Update: {
+          finished_at?: string | null
+          id?: number
+          info?: Json | null
+          job?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
