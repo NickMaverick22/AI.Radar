@@ -1,4 +1,13 @@
 project_id = "jtyjewzulygflrrfszre"
 
 [functions.xi-signed-url]
+verify_jwt = true
+
+[functions.ingest-github]
+verify_jwt = true
+
+[functions.rank-recompute]
+verify_jwt = true
+
+[functions.public-update-log]
 verify_jwt = false

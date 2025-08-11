@@ -11,14 +11,14 @@ export default function Rankings() {
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase
-        .from("admin_weights")
+        .from("ranking_daily")
         .select("category")
         .order("category", { ascending: true });
       if (error) {
         console.error("Failed to load categories", error);
         return;
       }
-      const cats = (data ?? []).map((d: any) => d.category as string);
+      const cats = Array.from(new Set((data ?? []).map((d: any) => d.category as string)));
       setCategories(cats);
       if (!category && cats.length) setCategory(cats[0]);
     };

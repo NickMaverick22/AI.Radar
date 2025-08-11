@@ -3,20 +3,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Updates() {
-  const [logs, setLogs] = useState<Array<{ finished_at: string; job: string; status: string; info: any }>>([]);
+  const [logs, setLogs] = useState<Array<{ finished_at: string; job: string; status: string }>>([]);
 
   useEffect(() => {
     const load = async () => {
-      const { data, error } = await supabase
-        .from("update_log")
-        .select("finished_at, job, status, info")
-        .order("finished_at", { ascending: false })
-        .limit(50);
+      const { data, error } = await supabase.functions.invoke("public-update-log");
       if (error) {
         console.error("Failed to load update log", error);
         return;
       }
-      setLogs(data as any);
+      setLogs(((data as any)?.logs ?? []) as any);
     };
     load();
   }, []);
@@ -37,7 +33,7 @@ export default function Updates() {
           <li key={i} className="rounded-lg border p-3">
             <div className="text-sm text-muted-foreground">{new Date(u.finished_at).toLocaleString()}</div>
             <div className="font-medium">{u.job} — {u.status}</div>
-            {u.info && <pre className="mt-1 text-xs text-muted-foreground overflow-auto">{JSON.stringify(u.info)}</pre>}
+            
           </li>
         ))}
       </ul>

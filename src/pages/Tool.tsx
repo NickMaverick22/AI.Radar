@@ -60,7 +60,7 @@ export default function Tool() {
             <li>Open source: {tool.is_oss ? "Yes" : "No"}</li>
             <li>
               {tool.homepage_url ? (
-                <a className="underline" href={tool.homepage_url} target="_blank" rel="noreferrer">Website</a>
+                <a className="underline" href={tool.homepage_url} target="_blank" rel="noopener noreferrer">Website</a>
               ) : (
                 "Website: —"
               )}

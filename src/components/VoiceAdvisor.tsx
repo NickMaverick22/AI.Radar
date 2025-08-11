@@ -13,16 +13,15 @@ export default function VoiceAdvisor() {
     onError: (e) => toast({ title: "Voice error", description: String(e), variant: "destructive" }),
   });
 
-  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem("eleven_api_key") || "");
+  
   const [agentId, setAgentId] = useState<string>(() => localStorage.getItem("eleven_agent_id") || "");
   const [messages, setMessages] = useState<string[]>([]);
   const connectedRef = useRef(false);
 
   useEffect(() => {
-    // store keys
-    if (apiKey) localStorage.setItem("eleven_api_key", apiKey);
+    // store agent id only
     if (agentId) localStorage.setItem("eleven_agent_id", agentId);
-  }, [apiKey, agentId]);
+  }, [agentId]);
 
   const connect = async () => {
     try {
@@ -67,15 +66,6 @@ export default function VoiceAdvisor() {
   return (
     <Card className="p-4 md:p-6">
       <div className="flex flex-col md:flex-row md:items-end gap-3">
-        <div className="flex-1 space-y-2">
-          <label className="text-sm text-muted-foreground">ElevenLabs API Key</label>
-          <Input
-            type="password"
-            placeholder="sk_..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-        </div>
         <div className="flex-1 space-y-2">
           <label className="text-sm text-muted-foreground">Agent ID (public)</label>
           <Input
