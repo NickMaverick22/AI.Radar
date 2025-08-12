@@ -19,7 +19,7 @@ const heroPointer = () => {
 };
 
 const Index = () => {
-  const [logs, setLogs] = useState<Array<{ finished_at: string; job: string; status: string; info: any }>>([]);
+  const [logs, setLogs] = useState<Array<{ finished_at: string; job: string; status: string }>>([]);
   const [movers, setMovers] = useState<Array<{ tool_id: string; delta: number }>>([]);
   const [categories, setCategories] = useState<string[]>([]);
 
@@ -30,14 +30,25 @@ const Index = () => {
 
   useEffect(() => {
     const load = async () => {
-      const [{ data: logData }, { data: cats } , { data: today }] = await Promise.all([
-        supabase.from("update_log").select("finished_at, job, status, info").order("finished_at", { ascending: false }).limit(20),
-        supabase.from("admin_weights").select("category").order("category", { ascending: true }),
-        supabase.from("ranking_daily").select("tool_id, delta_vs_yesterday_int").eq("as_of_date", new Date().toISOString().slice(0,10)).order("delta_vs_yesterday_int", { ascending: false }).limit(8),
+      const [{ data: logResp }, { data: today }, { data: cats }] = await Promise.all([
+        supabase.functions.invoke("public-update-log"),
+        supabase
+          .from("ranking_daily")
+          .select("tool_id, delta_vs_yesterday_int")
+          .eq("as_of_date", new Date().toISOString().slice(0, 10))
+          .order("delta_vs_yesterday_int", { ascending: false })
+          .limit(8),
+        supabase
+          .from("ranking_daily")
+          .select("category")
+          .order("category", { ascending: true }),
       ]);
-      setLogs((logData as any) ?? []);
-      setCategories(((cats as any) ?? []).map((c: any) => c.category as string));
+      const logs = ((logResp as any)?.logs ?? []) as Array<{ finished_at: string; job: string; status: string }>;
+      setLogs(logs);
       setMovers(((today as any) ?? []).map((r: any) => ({ tool_id: r.tool_id as string, delta: r.delta_vs_yesterday_int as number })));
+      const allCats = (((cats as any) ?? []).map((c: any) => c.category as string)) as string[];
+      const uniqueCategories = Array.from(new Set(allCats));
+      setCategories(uniqueCategories);
     };
     load();
   }, []);
@@ -95,7 +106,7 @@ const Index = () => {
 
           <Card className="p-4 md:col-span-2">
             <h2 className="text-xl font-semibold">Ask the Voice Advisor</h2>
-            <p className="text-sm text-muted-foreground mt-1">Works with public or private ElevenLabs Agents using a secure signed URL.</p>
+            <p className="text-sm text-muted-foreground mt-1">Works with public ElevenLabs Agents. Enter your Agent ID.</p>
             <div className="mt-4"><VoiceAdvisor /></div>
           </Card>
         </div>
