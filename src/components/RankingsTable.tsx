@@ -13,7 +13,7 @@ interface RankRow {
   tools?: { name: string; homepage_url: string | null };
 }
 
-export function RankingsTable({ categoryKey }: { categoryKey: string }) {
+export function RankingsTable({ categoryKey, filterText }: { categoryKey: string; filterText?: string }) {
   const [rows, setRows] = useState<RankRow[]>([]);
 
   useEffect(() => {
@@ -40,6 +40,11 @@ export function RankingsTable({ categoryKey }: { categoryKey: string }) {
     };
   }, [categoryKey]);
 
+  const q = (filterText || "").trim().toLowerCase();
+  const filtered = q
+    ? rows.filter((r) => (r.tools?.name || "").toLowerCase().includes(q))
+    : rows;
+
   return (
     <div className="w-full overflow-x-auto">
       <Table>
@@ -53,34 +58,42 @@ export function RankingsTable({ categoryKey }: { categoryKey: string }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((r) => (
-            <TableRow key={r.tool_id}>
-              <TableCell>{r.rank_int}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Link to={`/tools/${r.tool_id}`} className="font-medium hover:underline">
-                    {r.tools?.name ?? r.tool_id}
-                  </Link>
-                  {r.rank_int <= 3 && <Badge variant="secondary">Top {r.rank_int}</Badge>}
-                </div>
-              </TableCell>
-              <TableCell>{Math.round(r.score_float)}</TableCell>
-              <TableCell>
-                <Badge variant={r.delta_vs_yesterday_int >= 0 ? "secondary" : "destructive"}>
-                  {r.delta_vs_yesterday_int >= 0 ? `+${r.delta_vs_yesterday_int}` : r.delta_vs_yesterday_int}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                {r.tools?.homepage_url && (
-                  <Button asChild variant="outline" size="sm">
-                    <a href={r.tools.homepage_url} target="_blank" rel="noreferrer">
-                      Visit
-                    </a>
-                  </Button>
-                )}
+          {filtered.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-muted-foreground">
+                No results.
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filtered.map((r) => (
+              <TableRow key={r.tool_id}>
+                <TableCell>{r.rank_int}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Link to={`/tools/${r.tool_id}`} className="font-medium hover:underline">
+                      {r.tools?.name ?? r.tool_id}
+                    </Link>
+                    {r.rank_int <= 3 && <Badge variant="secondary">Top {r.rank_int}</Badge>}
+                  </div>
+                </TableCell>
+                <TableCell>{Math.round(r.score_float)}</TableCell>
+                <TableCell>
+                  <Badge variant={r.delta_vs_yesterday_int >= 0 ? "secondary" : "destructive"}>
+                    {r.delta_vs_yesterday_int >= 0 ? `+${r.delta_vs_yesterday_int}` : r.delta_vs_yesterday_int}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {r.tools?.homepage_url && (
+                    <Button asChild variant="outline" size="sm">
+                      <a href={r.tools.homepage_url} target="_blank" rel="noreferrer">
+                        Visit
+                      </a>
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

@@ -3,12 +3,29 @@ import { useConversation } from "@11labs/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 
 export default function VoiceAdvisor() {
   const { toast } = useToast();
+  const VOICES = [
+    { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah' },
+    { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte' },
+    { id: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam' },
+    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George' },
+  ];
+  const [voiceId, setVoiceId] = useState<string>(() => localStorage.getItem('eleven_voice_id') || '9BWtsMINqrJLrRacOk9x');
+  const [volume, setVolume] = useState<number>(() => {
+    const v = localStorage.getItem('eleven_volume');
+    return v ? Number(v) : 0.9;
+  });
+  const [messages, setMessages] = useState<string[]>([]);
   const conversation = useConversation({
+    overrides: { tts: { voiceId } },
     onMessage: (m) => setMessages((prev) => [...prev, (m as any).message ?? ""]),
     onError: (e) => toast({ title: "Voice error", description: String(e), variant: "destructive" }),
   });

@@ -2,11 +2,13 @@ import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { RankingsTable } from "@/components/RankingsTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Rankings() {
   const [categories, setCategories] = useState<string[]>([]);
   const [category, setCategory] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
   useEffect(() => {
     const load = async () => {
@@ -36,19 +38,26 @@ export default function Rankings() {
         <h1 className="text-3xl font-bold">Rankings</h1>
         <p className="text-muted-foreground">Daily updated snapshots across AI categories.</p>
       </header>
-      <div className="mb-4 max-w-sm">
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 max-w-2xl">
+        <div>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Input
+          placeholder="Filter by tool name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
-      {category && <RankingsTable categoryKey={category} />}
+      {category && <RankingsTable categoryKey={category} filterText={search} />}
     </div>
   );
 }
